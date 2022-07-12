@@ -1,95 +1,63 @@
 package com.bayoku.playvideo
-
-import android.annotation.SuppressLint
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.common.util.Util
-import androidx.media3.common.MediaItem
-import com.bayoku.playvideo.databinding.ActivityMainBinding
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.YouTubePlayerListener
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFramePlayerOptions
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.ui.DefaultPlayerUiController
 
-/**
- * A fullscreen activity to play audio or video streams.
- */
 class MainActivity : AppCompatActivity() {
-
-    private val viewBinding by lazy(LazyThreadSafetyMode.NONE) {
-        ActivityMainBinding.inflate(layoutInflater)
-    }
-
-    private var player: ExoPlayer? = null
-
-    private var playWhenReady = true
-    private var currentItem = 0
-    private var playbackPosition = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(viewBinding.root)
-    }
+        setContentView(R.layout.activity_main)
 
-    public override fun onStart() {
-        super.onStart()
-        if (Util.SDK_INT > 23) {
-            initializePlayer()
-        }
-    }
+        val thirdPartyYouTubePlayerView =
+            findViewById<YouTubePlayerView>(R.id.third_party_player_view)
 
-    public override fun onResume() {
-        super.onResume()
-        hideSystemUi()
-        if (Util.SDK_INT <= 23 || player == null) {
-            initializePlayer()
-        }
-    }
+        thirdPartyYouTubePlayerView.enableAutomaticInitialization =
+            false // We set it to false because we init it manually
 
-    public override fun onPause() {
-        super.onPause()
-        if (Util.SDK_INT <= 23) {
-            releasePlayer()
-        }
-    }
+        val listener: YouTubePlayerListener = object : AbstractYouTubePlayerListener() {
+            override fun onReady(youTubePlayer: YouTubePlayer) {
+                // We're using pre-made custom ui
+                val defaultPlayerUiController =
+                    DefaultPlayerUiController(thirdPartyYouTubePlayerView, youTubePlayer)
+                defaultPlayerUiController.showFullscreenButton(true)
 
-    public override fun onStop() {
-        super.onStop()
-        if (Util.SDK_INT > 23) {
-            releasePlayer()
-        }
-    }
+                // When the video is in full-screen, cover the entire screen
+                defaultPlayerUiController.setFullScreenButtonClickListener {
+                    if (thirdPartyYouTubePlayerView.isFullScreen()) {
+                        thirdPartyYouTubePlayerView.exitFullScreen()
+                        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+                        // Show ActionBar
+                        if (supportActionBar != null) {
+                            supportActionBar!!.show()
+                        }
+                    } else {
+                        thirdPartyYouTubePlayerView.enterFullScreen()
+                        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN
+                        // Hide ActionBar
+                        if (supportActionBar != null) {
+                            supportActionBar!!.hide()
+                        }
+                    }
+                }
 
-    private fun initializePlayer() {
-        player = ExoPlayer.Builder(this)
-            .build()
-            .also { exoPlayer ->
-                viewBinding.videoView.player = exoPlayer
 
-                val mediaItem = MediaItem.fromUri(getString(R.string.media_url_mp4))
-                exoPlayer.setMediaItem(mediaItem)
-                exoPlayer.playWhenReady = playWhenReady
-                exoPlayer.seekTo(currentItem, playbackPosition)
-                exoPlayer.prepare()
+                thirdPartyYouTubePlayerView.setCustomPlayerUi(defaultPlayerUiController.rootView)
+
+                val videoId = "W3P3rT0j2gQ"
+                youTubePlayer.loadVideo(videoId, 0f)
             }
-    }
-
-    private fun releasePlayer() {
-        player?.let { exoPlayer ->
-            playbackPosition = exoPlayer.currentPosition
-            currentItem = exoPlayer.currentMediaItemIndex
-            playWhenReady = exoPlayer.playWhenReady
-            exoPlayer.release()
         }
-        player = null
-    }
 
-    @SuppressLint("InlinedApi")
-    private fun hideSystemUi() {
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        WindowInsetsControllerCompat(window, viewBinding.videoView).let { controller ->
-            controller.hide(WindowInsetsCompat.Type.systemBars())
-            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
+        // Disable iFrame UI
+        val options: IFramePlayerOptions = IFramePlayerOptions.Builder().controls(0).build()
+        thirdPartyYouTubePlayerView.initialize(listener, options)
+
     }
 }

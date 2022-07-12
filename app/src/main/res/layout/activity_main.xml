@@ -1,22 +1,19 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000">
+    android:orientation="vertical"
+    tools:context=".MainActivity">
 
-    <LinearLayout
+    <!--on below line we are creating
+        a text for heading of our app-->
+
+    <com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
+        android:id="@+id/third_party_player_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="center"
-        android:gravity="center"
-        android:orientation="vertical">
+        android:layout_height="wrap_content" />
 
-        <androidx.media3.ui.PlayerView
-            android:id="@+id/video_view"
-            android:layout_width="match_parent"
-            android:layout_height="500dp"/>
-
-    </LinearLayout>
-
-
-
-</FrameLayout>
+</RelativeLayout>
